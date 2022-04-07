@@ -9,6 +9,9 @@ import csv
 import matplotlib.pyplot as plt
 from bs4 import BeautifulSoup 
 
+#Phoebe, Shreya, Isabelle
+
+
 def setUpDatabase(db_name):
     pass
 
