@@ -26,7 +26,29 @@ print(result['tracks']['items'][0]['artists'])
 
 
 def setUpDatabase(db_name):
-    pass
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(path+'/'+db_name)
+    cur = conn.cursor()
+    return cur, conn
+
+def createTables(cur, conn):
+    #songs (title, album #, artist/collaborator #, song length, genre #, )
+    #album ()
+    #collaborators ()
+    #genre ()
+    #awards?
+    #music video (title, length, views, ?)
+    cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
+        ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
+        'collab_id' NUMBER, 'length' INTEGER, 'genre_id' NUMBER)""")
+        #am i missing anything? are we doing ratings
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Artists" ('id' INTEGER PRIMARY KEY, 'artist_name' TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Genres" ('id' INTEGER PRIMARY KEY, 'genre_name' TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Music Videos" ('id' INTEGER PRIMARY KEY, 'song_title' NUMBER, 'views' INTEGER)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
+
+    conn.commit()
 
 def scrapeWiki(soup):
     wiki_dict = {}
@@ -107,6 +129,9 @@ def main():
     soup = BeautifulSoup(page.text, 'html.parser')
     scrapeWiki(soup)
     spotifyApi()
+
+    cur, conn = setUpDatabase('new_db.db')
+    createTables(cur, conn)
 
 main()
 
