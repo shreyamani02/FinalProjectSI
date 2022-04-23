@@ -18,7 +18,7 @@ client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secr
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 name = "{Taylor Swift}"
 result = sp.search(name)
-print(result['tracks']['items'][0]['artists'])
+#print(result['tracks']['items'][0]['artists'])
 
 
 
@@ -40,7 +40,7 @@ def createTables(cur, conn):
     #music video (title, length, views, ?)
     cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
-        'collab_id' NUMBER, 'length' INTEGER, 'genre_id' NUMBER)""")
+        'collab_id' NUMBER, 'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' FLOAT, 'energy' FLOAT)""")
         #am i missing anything? are we doing ratings
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Artists" ('id' INTEGER PRIMARY KEY, 'artist_name' TEXT)""")
@@ -69,12 +69,14 @@ def scrapeWiki(soup):
                 wiki_dict[key] = new_dict
                 new_dict = {}
                 iterator = 1
+
     return wiki_dict
 
 def spotifyApi():
     artist_uri = result['tracks']['items'][0]['artists'][0]['uri']
     sp_albums = sp.artist_albums(artist_uri, album_type='album')
     artist_data_list = []
+    song_id_list = []
     for i in range(len(sp_albums['items'])):
         new_dict = {}
         new_dict['Album Name'] = sp_albums['items'][i]['name']
@@ -87,17 +89,76 @@ def spotifyApi():
             data_dict["Song Track Number"] = tracks['items'][n]['track_number']
             data_dict["Song URL"] = tracks['items'][n]['uri']
             data_dict["Track ID"] = tracks['items'][n]['id']
+            track_id = tracks['items'][n]['id']
+            song_id_list.append(track_id)
             tracklist.append(data_dict)
         new_dict['Track Data'] = tracklist
         artist_data_list.append(new_dict)
-    print(artist_data_list)
+    return song_id_list
+
+def update_spotify_data(ids, cur, conn):
+    track_list = []
+    id = 0
+    for id in ids:
+        meta = sp.track(id)
+        features = sp.audio_features(id)
+
+        new_track_info = []
+        #fetch track info
+        name = meta['name']
+        album = meta['album']['name']
+        artist = meta['album']['artists'][0]['name']
+        release_date = meta['album']['release_date']
+        length = meta['duration_ms']
+        popularity = meta['popularity']
+        danceability = features[0]['danceability']
+        energy = features[0]['energy']
+        new_track_info = [name, album, artist, release_date, length, popularity, danceability, energy]
+        track_list.append(new_track_info)
+
+        cur.execute(
+            """INSERT OR IGNORE INTO Songs (song_id, song_title, album_id, collab_id, length, genre_id, popularity, danceability, energy)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (id, )
+        )
+    print('____')
+
+    for track in track_list:
+        award_show_name = item['award_show_name'] #idk what this means w the integers
+        num_noms = int(item['noms'])
+        num_wins = int(item['wins'])
+        cur.execute(
+            """
+            INSERT OR IGNORE INTO Awards (id, award_show_name, num_wins, num_noms) 
+            VALUES (?, ?, ?, ?)
+            """,
+            (id, award_show_name, num_noms, num_wins)
+        )
+        id += 1
+    conn.commit()
+    pass 
 
 
 def youtubeAPI():
     pass
 
 def updateAPI (cur, conn, data):
-    pass
+    #update w wiki info
+    id = 0
+    for item in data:
+        award_show_name = item['award_show_name'] #idk what this means w the integers
+        num_noms = int(item['noms'])
+        num_wins = int(item['wins'])
+        cur.execute(
+            """
+            INSERT OR IGNORE INTO Awards (id, award_show_name, num_wins, num_noms) 
+            VALUES (?, ?, ?, ?)
+            """,
+            (id, award_show_name, num_noms, num_wins)
+        )
+        id += 1
+    conn.commit()
+
 
 def avg_length_album(name, cur, conn):
     pass
@@ -106,6 +167,9 @@ def most_music_videos(cur, conn, data):
     pass
 
 def avg_rating(cur, conn, album):
+    pass
+
+def write_calculations(data):
     pass
 
 def avg_rating_graph(cur, conn, data):
@@ -127,11 +191,14 @@ def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'html.parser')
-    scrapeWiki(soup)
-    spotifyApi()
+    wiki_data = scrapeWiki(soup)
+    spotify_data = spotifyApi()
 
     cur, conn = setUpDatabase('new_db.db')
     createTables(cur, conn)
+
+    update_spotify_data(spotify_data, cur, conn)
+    #updateAPI(cur, conn, wiki_data)
 
 main()
 
