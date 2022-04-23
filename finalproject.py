@@ -34,16 +34,14 @@ def setUpDatabase(db_name):
 def createTables(cur, conn):
     #songs (title, album #, artist/collaborator #, song length, genre #, )
     #album ()
-    #collaborators ()
     #genre ()
     #awards?
     #music video (title, length, views, ?)
     cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
-        'collab_id' NUMBER, 'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' FLOAT, 'energy' FLOAT)""")
+         'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
         #am i missing anything? are we doing ratings
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Artists" ('id' INTEGER PRIMARY KEY, 'artist_name' TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Genres" ('id' INTEGER PRIMARY KEY, 'genre_name' TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Music Videos" ('id' INTEGER PRIMARY KEY, 'song_title' NUMBER, 'views' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
@@ -98,7 +96,7 @@ def spotifyApi():
 
 def update_spotify_data(ids, cur, conn):
     track_list = []
-    id = 0
+    song_id = 0
     for id in ids:
         meta = sp.track(id)
         features = sp.audio_features(id)
@@ -109,34 +107,20 @@ def update_spotify_data(ids, cur, conn):
         album = meta['album']['name']
         artist = meta['album']['artists'][0]['name']
         release_date = meta['album']['release_date']
-        length = meta['duration_ms']
-        popularity = meta['popularity']
-        danceability = features[0]['danceability']
-        energy = features[0]['energy']
+        length = int(meta['duration_ms'])
+        popularity = int(meta['popularity'])
+        danceability = float(features[0]['danceability'])
+        energy = float(features[0]['energy'])
         new_track_info = [name, album, artist, release_date, length, popularity, danceability, energy]
         track_list.append(new_track_info)
 
         cur.execute(
-            """INSERT OR IGNORE INTO Songs (song_id, song_title, album_id, collab_id, length, genre_id, popularity, danceability, energy)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (id, )
+            """INSERT OR IGNORE INTO Songs (song_id, song_title, album_id, length, genre_id, popularity, danceability, energy)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (song_id, name, 0, length, 0, popularity, danceability, energy)
         )
-    print('____')
-
-    for track in track_list:
-        award_show_name = item['award_show_name'] #idk what this means w the integers
-        num_noms = int(item['noms'])
-        num_wins = int(item['wins'])
-        cur.execute(
-            """
-            INSERT OR IGNORE INTO Awards (id, award_show_name, num_wins, num_noms) 
-            VALUES (?, ?, ?, ?)
-            """,
-            (id, award_show_name, num_noms, num_wins)
-        )
-        id += 1
+        song_id += 1
     conn.commit()
-    pass 
 
 
 def youtubeAPI():
@@ -194,7 +178,7 @@ def main():
     wiki_data = scrapeWiki(soup)
     spotify_data = spotifyApi()
 
-    cur, conn = setUpDatabase('new_db.db')
+    cur, conn = setUpDatabase('db_vol_4.db')
     createTables(cur, conn)
 
     update_spotify_data(spotify_data, cur, conn)
