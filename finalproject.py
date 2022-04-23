@@ -32,17 +32,12 @@ def setUpDatabase(db_name):
     return cur, conn
 
 def createTables(cur, conn):
-    #songs (title, album #, artist/collaborator #, song length, genre #, )
-    #album ()
-    #genre ()
-    #awards?
-    #music video (title, length, views, ?)
+    
     cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
-         'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
+         'length' INTEGER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
         #am i missing anything? are we doing ratings
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Genres" ('id' INTEGER PRIMARY KEY, 'genre_name' TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Music Videos" ('id' INTEGER PRIMARY KEY, 'song_title' NUMBER, 'views' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
 
@@ -75,9 +70,12 @@ def spotifyApi():
     sp_albums = sp.artist_albums(artist_uri, album_type='album')
     artist_data_list = []
     song_id_list = []
+    print("printing album list:")
+    album_list = []
     for i in range(len(sp_albums['items'])):
         new_dict = {}
         new_dict['Album Name'] = sp_albums['items'][i]['name']
+        album_list.append(sp_albums['items'][i]['name'])
         new_dict['Album Url'] = sp_albums['items'][i]['uri']
         tracks = sp.album_tracks(new_dict['Album Url'])
         tracklist = []
@@ -92,11 +90,17 @@ def spotifyApi():
             tracklist.append(data_dict)
         new_dict['Track Data'] = tracklist
         artist_data_list.append(new_dict)
-    return song_id_list
 
-def update_spotify_data(ids, cur, conn):
+    return song_id_list, album_list
+
+def update_spotify_data(ids, cur, conn, album_list):
     track_list = []
     song_id = 0
+    #update album table
+    for i in range(len(album_list)):
+        cur.execute("""INSERT OR IGNORE INTO Albums (id, album_title) VALUES (?, ?)""", 
+        (i, album_list[i]))
+
     for id in ids:
         meta = sp.track(id)
         features = sp.audio_features(id)
@@ -106,6 +110,9 @@ def update_spotify_data(ids, cur, conn):
         name = meta['name']
         album = meta['album']['name']
         artist = meta['album']['artists'][0]['name']
+        cur.execute('SELECT id from Albums WHERE album_title = ?',([album]))
+        album_id = int((cur.fetchone()[0]))
+
         release_date = meta['album']['release_date']
         length = int(meta['duration_ms'])
         popularity = int(meta['popularity'])
@@ -115,9 +122,9 @@ def update_spotify_data(ids, cur, conn):
         track_list.append(new_track_info)
 
         cur.execute(
-            """INSERT OR IGNORE INTO Songs (song_id, song_title, album_id, length, genre_id, popularity, danceability, energy)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (song_id, name, 0, length, 0, popularity, danceability, energy)
+            """INSERT OR IGNORE INTO Songs (song_id, song_title, album_id, length, popularity, danceability, energy)
+                VALUES (?, ?, ?,  ?, ?, ?, ?)""",
+                (song_id, name, album_id, length, popularity, danceability, energy)
         )
         song_id += 1
     conn.commit()
@@ -175,13 +182,20 @@ def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'html.parser')
-    wiki_data = scrapeWiki(soup)
-    spotify_data = spotifyApi()
+    #wiki_data = scrapeWiki(soup)
+    spotify_data, albums = spotifyApi()
 
     cur, conn = setUpDatabase('db_vol_4.db')
+    """
+    cur.execute("DROP TABLE IF EXISTS Songs")
+    cur.execute("DROP TABLE IF EXISTS Albums")
+    cur.execute("DROP TABLE IF EXISTS Genres")
+    """
+    
     createTables(cur, conn)
 
-    update_spotify_data(spotify_data, cur, conn)
+
+    update_spotify_data(spotify_data, cur, conn, albums)
     #updateAPI(cur, conn, wiki_data)
 
 main()
