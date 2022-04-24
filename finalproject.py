@@ -233,7 +233,7 @@ def youtubeAPI(cur, conn):
 
 def updateAPI (cur, conn, data):
     pass
-
+ 
 def avg_winsnoms_ratio(cur, conn):
     sum_ratio = 0
     count = 0
