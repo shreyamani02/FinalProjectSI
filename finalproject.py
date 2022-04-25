@@ -13,10 +13,6 @@ from spotipy.oauth2 import SpotifyClientCredentials #To access authorised Spotif
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
-<<<<<<< HEAD
-=======
-
->>>>>>> b3b2544d6de4c9d805aa6ddc7c36add972a6f0e4
 
 cid = '80e4d2a8c2734c8e882a74e6f2c3e9bd'
 secret = '9a43668b2bcc4b02a047683c2226defc'
@@ -37,7 +33,6 @@ def setUpDatabase(db_name):
     return cur, conn
 
 def createTables(cur, conn):
-<<<<<<< HEAD
     
     cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
@@ -48,27 +43,7 @@ def createTables(cur, conn):
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
 
     conn.commit()
-=======
-    #songs (title, album #, artist/collaborator #, song length, genre #, )
-    #album ()
-    #genre ()
-    #awards?
-    #music video (title, length, views, ?)
-    cur.execute("DROP TABLE IF EXISTS Awards")
-    cur.execute("DROP TABLE IF EXISTS Music_Videos")
-    cur.execute("DROP TABLE IF EXISTS Songs")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
-        ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
-         'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
-        #am i missing anything? are we doing ratings
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Genres" ('id' INTEGER PRIMARY KEY, 'genre_name' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' INTEGER PRIMARY KEY, 'song_title' NUMBER, 'song_name' TEXT, 'album_name' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
->>>>>>> b3b2544d6de4c9d805aa6ddc7c36add972a6f0e4
-
-    conn.commit()
 
 def scrapeWiki(soup, cur, conn):
     wiki_dict = {}
@@ -96,9 +71,6 @@ def scrapeWiki(soup, cur, conn):
                 wiki_dict[key] = new_dict
                 new_dict = {}
                 iterator = 1
-<<<<<<< HEAD
-
-=======
     del wiki_dict['Totals']
     for winsnoms in wiki_dict:
         cur.execute(
@@ -108,7 +80,6 @@ def scrapeWiki(soup, cur, conn):
         )
         award_id += 1
     conn.commit()
->>>>>>> b3b2544d6de4c9d805aa6ddc7c36add972a6f0e4
     return wiki_dict
 
 def spotifyApi():
@@ -135,7 +106,6 @@ def spotifyApi():
             song_id_list.append(track_id)
             tracklist.append(data_dict)
         new_dict['Track Data'] = tracklist
-<<<<<<< HEAD
         artist_data_list.append(new_dict)
 
     return song_id_list, album_list
@@ -215,10 +185,6 @@ def update_spotify_data(ids, cur, conn, album_list):
         )
         song_id += 1
     conn.commit()
-=======
-        artist_data_list.append(new_dict) 
-    return artist_data_list
->>>>>>> b3b2544d6de4c9d805aa6ddc7c36add972a6f0e4
 
 def update_spotify_data(cur, conn):
     track_list = []
@@ -227,9 +193,6 @@ def update_spotify_data(cur, conn):
     track_no = 1
     album_name = "Red (Taylor's Version)"
 
-<<<<<<< HEAD
-def youtubeAPI():
-=======
     ids = []
     artist_uri = result['tracks']['items'][0]['artists'][0]['uri']
     sp_albums = sp.artist_albums(artist_uri, album_type='album')
@@ -284,7 +247,6 @@ def get_song_ids(cur, conn):
     return song_ids
 
 def youtubeAPI(cur, conn):
->>>>>>> b3b2544d6de4c9d805aa6ddc7c36add972a6f0e4
     api_service_name = "youtube"
     api_version = "v3"
     api_key = "AIzaSyDxoKyMEt6S3NdpT_yOIFTkSK3yWxQGbaE"
@@ -322,9 +284,6 @@ def youtubeAPI(cur, conn):
             song_list.append((title))
         
         album_videos[album] = song_list
-<<<<<<< HEAD
-    
-=======
     song_id = 0
     album_id = 0
     track_iterator = 0
@@ -343,7 +302,6 @@ def youtubeAPI(cur, conn):
     print("TRACK ID")
     print(track_ids)
     conn.commit()
->>>>>>> b3b2544d6de4c9d805aa6ddc7c36add972a6f0e4
     return album_videos
 
 def updateAPI (cur, conn, data):
@@ -415,20 +373,15 @@ def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url, verify=False)
     soup = BeautifulSoup(page.text, 'html.parser')
-<<<<<<< HEAD
-    #wiki_data = scrapeWiki(soup)
-    ids, albums = playlist_data()
-=======
     cur, conn = setUpDatabase('db_vol_4.db')
     createTables(cur, conn)
     scrapeWiki(soup, cur, conn)
     avg_winsnoms_ratio(cur, conn)
-    spotifyApi()
+    ids, albums = playlist_data()
     youtubeAPI2 = youtubeAPI(cur, conn)
     print(youtubeAPI2)
     print(update_spotify_data(cur, conn))
 
->>>>>>> b3b2544d6de4c9d805aa6ddc7c36add972a6f0e4
 
     cur, conn = setUpDatabase('db_vol_4.db')
     """
