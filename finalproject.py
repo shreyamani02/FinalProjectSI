@@ -5,6 +5,8 @@ import matplotlib
 import sqlite3
 import csv
 import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
+import numpy as np
 from bs4 import BeautifulSoup
 import requests
 import unittest
@@ -14,14 +16,16 @@ import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
 
+
 cid = '80e4d2a8c2734c8e882a74e6f2c3e9bd'
 secret = '9a43668b2bcc4b02a047683c2226defc'
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 name = "{Taylor Swift}"
 result = sp.search(name)
-#print(result['tracks']['items'][0]['artists'])
-scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+print(result['tracks']['items'][0]['artists'])
+
+
 
 #Phoebe, Shreya, Isabelle
 
@@ -33,11 +37,23 @@ def setUpDatabase(db_name):
     return cur, conn
 
 def createTables(cur, conn):
+    #songs (title, album #, artist/collaborator #, song length, genre #, )
+    #album ()
+    #genre ()
+    #awards?
+    #music video (title, length, views, ?)
+    cur.execute("DROP TABLE IF EXISTS Awards")
+    cur.execute("DROP TABLE IF EXISTS Albums")
+    cur.execute("DROP TABLE IF EXISTS Music_Videos")
+    cur.execute("DROP TABLE IF EXISTS Songs")
+
     cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
-         'length' INTEGER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
+         'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
+        #am i missing anything? are we doing ratings
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'song_id' INTEGER, 'album_id' INTEGER, 'date' INTEGER)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Genres" ('id' INTEGER PRIMARY KEY, 'genre_name' TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' INTEGER PRIMARY KEY, 'song_title' NUMBER, 'song_name' TEXT, 'album_name' TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
 
     conn.commit()
@@ -79,7 +95,7 @@ def scrapeWiki(soup, cur, conn):
     conn.commit()
     return wiki_dict
 
-def spotifyApi():
+def playlist_data():
     offset = 0
     pl_id = 'spotify:playlist:4GtQVhGjAwcHFz82UKy3Ca'
     big_list = []
@@ -88,12 +104,17 @@ def spotifyApi():
                                  offset=offset,
                                  fields='items,total',
                                  additional_types=['track'])
+       
         if len(response['items']) == 0:
             break
-
+       
+ 
         big_list.append(response['items'])
         offset = offset + len(response['items'])
-
+ 
+        #print(offset, "/", response['total'])
+   
+   
     ids = []
     test_dict = []
     albums = []
@@ -105,16 +126,25 @@ def spotifyApi():
             album = dict['track']['album']['name']
             if album not in albums:
                 albums.append(dict['track']['album']['name'])
-
+ 
+            #for key in dict['track']:
+            #    print(key)
+   
+ 
     return ids, albums
+    #known- there are 3 pages of data to pull
 
-def update_spotify_data(ids, cur, conn, album_list):
+
+def update_spotify_data(cur, conn, ids, albums):
     track_list = []
+    id = 0
     song_id = 0
-    #update album table
-    for i in range(len(album_list)):
+    album_no = 0
+
+    for album in albums:
         cur.execute("""INSERT OR IGNORE INTO Albums (id, album_title) VALUES (?, ?)""", 
-        (i, album_list[i].lower()))
+        (album_no, album))
+        album_no += 1
 
     for id in ids:
         meta = sp.track(id)
@@ -122,9 +152,9 @@ def update_spotify_data(ids, cur, conn, album_list):
 
         new_track_info = []
         #fetch track info
-        name = meta['name'].lower()
-        album = meta['album']['name'].lower()
-        artist = meta['album']['artists'][0]['name'].lower()
+        name = meta['name']
+        album = meta['album']['name']
+        artist = meta['album']['artists'][0]['name']
         cur.execute('SELECT id from Albums WHERE album_title = ?',([album]))
         album_id = int((cur.fetchone()[0]))
 
@@ -144,17 +174,22 @@ def update_spotify_data(ids, cur, conn, album_list):
         song_id += 1
     conn.commit()
 
+    return track_list
+
 def get_song_ids(cur, conn):
     cur.execute(
         """
         SELECT Songs.song_id
-        FROM Music_Videos JOIN Songs
-        Where Music_Videos.song_name = songs.song_title 
+        FROM Songs JOIN Music_Videos
+        WHERE Music_Videos.song_name = Songs.song_title
+        ORDER BY Music_Videos.song_name
         """
     )
     song_ids = cur.fetchall()
-    conn.commit()
-    return song_ids
+    append_ids = []
+    for i in song_ids:
+        append_ids.append(i[0])
+    return append_ids
 
 def youtubeAPI(cur, conn):
     api_service_name = "youtube"
@@ -179,25 +214,42 @@ def youtubeAPI(cur, conn):
     
     for album in playlist.keys():
         request = youtube.playlistItems().list(
-            part="contentDetails, snippet, id, status",
+            part="contentDetails, snippet",
             playlistId=playlist[album],
             maxResults = 50
         )
         response = request.execute()
+        
         song_list = []
+        
         items = response["items"]
         for i in items:
             sub_it = i["snippet"]
-            title = sub_it["title"].lower()
-            date = sub_it["publishedAt"][:10]
-            digdate = int(date[:4]+date[5:7]+date[-2:])
-            song_list.append((title, digdate))
+            title = sub_it["title"]
+            song_list.append((title))
+        
         album_videos[album] = song_list
-    for album in album_videos:
-        for i in album_videos[album]:
-            cur.execute("INSERT OR IGNORE INTO Music_Videos (title, date) VALUES (?,?)", (i[0],i[1]))
-            conn.commit()
+    song_id = 0
+    album_id = 0
+    track_iterator = 0
+    for video in album_videos:
+        for song in album_videos[video]:
+            cur.execute(
+                """INSERT OR IGNORE INTO Music_Videos (id, song_title, song_name, album_name)
+                VALUES (?, ?, ?, ?)""",
+                (song_id, 0, song.lower(), album_id)
+            )
+            track_iterator += 1
+            song_id += 1 
+        album_id+= 1
+    conn.commit()
+    ids = get_song_ids(cur, conn)
+    print(ids)
+    return album_videos
 
+def updateAPI (cur, conn, data):
+    pass
+ 
 def avg_winsnoms_ratio(cur, conn):
     sum_ratio = 0
     count = 0
@@ -216,36 +268,6 @@ def avg_winsnoms_ratio(cur, conn):
     conn.commit()
     return avg_ratio
 
-def avg_length_album(album, cur, conn):
-    cur.execute("SELECT length FROM Songs JOIN albums ON albums.id = Songs.album_id WHERE album_title = (?)", (album,))
-    song_lengths = cur.fetchall()
-    song_len_list = []
-    for i in song_lengths:
-        song_len_list.append(i[0])
-    avg = sum(song_len_list)/len(song_len_list)
-    avg_in_min = avg /60000
-    return avg_in_min
-
-def most_popular_album(cur, conn):
-    cur.execute("SELECT id FROM albums")
-    album_ids = cur.fetchall()
-    pop_dict = {}
-    for i in album_ids:
-        cur.execute("SELECT popularity FROM Songs WHERE album_id = (?)", (i[0],))
-        pop_tup_list = cur.fetchall()
-        pop_list = []
-        for a in pop_tup_list:
-            pop_list.append(a[0])
-        if len(pop_list) != 0:
-            avg = sum(pop_list)/len(pop_list)
-            pop_dict[i[0]]= avg
-        else:
-            continue
-    pop_id = sorted(pop_dict.items(), key=lambda x: x[1], reverse = True)[0][0]
-    cur.execute("SELECT album_title FROM albums WHERE id = (?)", (pop_id,))
-    top_album = cur.fetchone()[0]
-    return top_album
-
 def album_time(album, cur, conn):
     cur.execute("SELECT length FROM Songs JOIN albums ON albums.id = Songs.album_id WHERE album_title = (?)", (album,))
     length_list = cur.fetchall()
@@ -255,17 +277,43 @@ def album_time(album, cur, conn):
     total_length = sum(song_len_list)
     return total_length
 
-def write_calculations(data):
-    pass
 
-def avg_rating_graph(cur, conn, data):
-    pass
+def danceable_album(cur, conn):
+    cur.execute(
+        """
+        SELECT Songs.danceability, Albums.album_title 
+        FROM Songs JOIN Albums
+        WHERE Songs.album_id = Albums.id 
+        """
+    )
+    res = cur.fetchall()
+    album_name = "The Joker And The Queen (feat. Taylor Swift)"
+    print(res)
+    avg_list = []
+    album_list = []
+    sum = 0
+    count = 0
+    for i in res:
+        if i[1] == album_name:
+            sum += i[0]
+            count += 1
+        else:
+            print(i[1])
+            album_list.append(i[1])
+            average = sum / count
+            avg_list.append(average)
+            sum = 0
+            count = 0
 
-def avg_length_graph(cur, conn, data):
-    pass
-
-def total_length_graph(cur, conn, data):
-    pass
+    fig = plt.figure(figsize = (10, 5))
+    plt.barh(album_list, avg_list, color ='blue')
+    plt.xlabel("Average Taylor Swift Album Danceability")
+    plt.ylabel("Album Name")
+    plt.yticks(fontsize = 8)
+    plt.title("Danceability")
+    plt.show()
+    return res 
+    
 
 def pie_chart_album_lengths(cur, conn):
     cur.execute("SELECT length FROM Songs")
@@ -294,33 +342,42 @@ def pie_chart_album_lengths(cur, conn):
     plt.show()
     return(plt)
 
+def most_music_videos(cur, conn, data):
+    pass
+
+def avg_rating(cur, conn, album):
+    pass
+
+def avg_rating_graph(cur, conn, data):
+    pass
+
+def avg_length_graph(cur, conn, data):
+    pass
+
+def total_length_graph(cur, conn, data):
+    pass
+
+def pie_chart_genre(cur, conn, data):
+    pass
+
+def ratings_vs_rollingstone(cur, conn, data):
+    pass
+
 def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url, verify=False)
     soup = BeautifulSoup(page.text, 'html.parser')
-    cur, conn = setUpDatabase('db_vol_7.db')
+    cur, conn = setUpDatabase('db_vol_4.db')
+    ids, albums = playlist_data()
     createTables(cur, conn)
-    wiki_dict = scrapeWiki(soup, cur, conn)
-    song_id_list, album_list = spotifyApi()
-    update_spotify_data(song_id_list, cur, conn, album_list)
-    yt_data= youtubeAPI(cur, conn)
-    
-    #calculations and visualizations
-    """
-    for album in album_list:
-        #x = str(avg_length_album(album, cur, conn))
-        #print("average time of "+album+ " is "+ x + " minutes")
-    pop= most_popular_album(cur, conn)
-    print("The most popular album is "+ pop)
-    wins = str(avg_winsnoms_ratio(cur, conn))
-    print("On average, Taylor wins "+ wins + " awards for every nomination.")
-    pie_chart_album_lengths(cur, conn)
-    """
+    scrapeWiki(soup, cur, conn)
+    avg_winsnoms_ratio(cur, conn)
+    youtubeAPI2 = youtubeAPI(cur, conn)
+    print(youtubeAPI2)
+    print(update_spotify_data(cur, conn, ids, albums))
+    print(danceable_album(cur, conn))
+
 
 main()
-"""
-cur, conn = setUpDatabase('db_vol_5.db')
-cur.execute("DROP TABLE IF EXISTS Songs")
-cur.execute("DROP TABLE IF EXISTS Albums")
-cur.execute("DROP TABLE IF EXISTS Genres")
-"""
+
+
