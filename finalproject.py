@@ -65,14 +65,24 @@ def scrapeWiki(soup, cur, conn):
                 new_dict = {}
                 iterator = 1
     del wiki_dict['Totals']
+    print("counting the ids, limiting to 25?")
     for winsnoms in wiki_dict:
+        cur.execute("""SELECT MAX(id) FROM Awards""")
+        count = cur.fetchone()[0]
+        print(count)
+        
+
         cur.execute(
             """INSERT OR IGNORE INTO Awards (id, award_show_name, num_wins, num_noms)
             VALUES (?, ?, ?, ?)""",
             (award_id, winsnoms, wiki_dict[winsnoms]['wins'], wiki_dict[winsnoms]['noms'])
         )
         award_id += 1
-    conn.commit()
+        conn.commit()
+        if type(count) == int:
+            if count % 25 == 0:
+                sys.exit()
+                #exit program every 25 items
     return wiki_dict
 
 def spotifyApi():
@@ -108,9 +118,10 @@ def update_spotify_data(ids, cur, conn, album_list):
     track_list = []
     song_id = 0
     #update album table
+    count = 0
     for i in range(len(album_list)):
-        cur.execute("""INSERT OR IGNORE INTO Albums (id, album_title) VALUES (?, ?)""", 
-        (i, album_list[i].lower()))
+            cur.execute("""INSERT OR IGNORE INTO Albums (id, album_title) VALUES (?, ?)""", 
+            (i, album_list[i].lower()))
 
     for id in ids:
         meta = sp.track(id)
@@ -295,7 +306,9 @@ def main():
     page = requests.get(url, verify=False)
     soup = BeautifulSoup(page.text, 'html.parser')
     cur, conn = setUpDatabase('db_vol_7.db')
+    #cur.execute('DROP TABLE IF EXISTS Awards')
     createTables(cur, conn)
+
     wiki_dict = scrapeWiki(soup, cur, conn)
     song_id_list, album_list = spotifyApi()
     update_spotify_data(song_id_list, cur, conn, album_list)
@@ -314,9 +327,3 @@ def main():
     """
 
 main()
-"""
-cur, conn = setUpDatabase('db_vol_5.db')
-cur.execute("DROP TABLE IF EXISTS Songs")
-cur.execute("DROP TABLE IF EXISTS Albums")
-cur.execute("DROP TABLE IF EXISTS Genres")
-"""
