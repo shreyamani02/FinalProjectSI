@@ -18,13 +18,9 @@ cid = '80e4d2a8c2734c8e882a74e6f2c3e9bd'
 secret = '9a43668b2bcc4b02a047683c2226defc'
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
-name = "{Taylor Swift}"
-result = sp.search(name)
-#print(result['tracks']['items'][0]['artists'])
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 #Phoebe, Shreya, Isabelle
-
 
 def setUpDatabase(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
