@@ -10,7 +10,9 @@ import requests
 import unittest
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials #To access authorised Spotify data
-
+import google_auth_oauthlib.flow
+import googleapiclient.discovery
+import googleapiclient.errors
 
 cid = '80e4d2a8c2734c8e882a74e6f2c3e9bd'
 secret = '9a43668b2bcc4b02a047683c2226defc'
@@ -19,8 +21,7 @@ sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 name = "{Taylor Swift}"
 result = sp.search(name)
 #print(result['tracks']['items'][0]['artists'])
-
-
+scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 #Phoebe, Shreya, Isabelle
 
@@ -93,6 +94,46 @@ def spotifyApi():
 
     return song_id_list, album_list
 
+def playlist_data():
+    offset = 0
+    pl_id = 'spotify:playlist:4GtQVhGjAwcHFz82UKy3Ca'
+    big_list = []
+    while True:
+        response = sp.playlist_items(pl_id,
+                                 offset=offset,
+                                 fields='items,total',
+                                 additional_types=['track'])
+       
+        if len(response['items']) == 0:
+            break
+       
+ 
+        big_list.append(response['items'])
+        offset = offset + len(response['items'])
+ 
+        #print(offset, "/", response['total'])
+   
+   
+    ids = []
+    test_dict = []
+    albums = []
+    for list in big_list:
+        for dict in list:
+            #print(dict.keys())
+            test_dict.append(dict['track']['album']['name'])
+            ids.append(dict['track']['id'])
+            album = dict['track']['album']['name']
+            if album not in albums:
+                albums.append(dict['track']['album']['name'])
+ 
+            #for key in dict['track']:
+            #    print(key)
+   
+ 
+    return ids, albums
+    #known- there are 3 pages of data to pull
+
+
 def update_spotify_data(ids, cur, conn, album_list):
     track_list = []
     song_id = 0
@@ -131,7 +172,45 @@ def update_spotify_data(ids, cur, conn, album_list):
 
 
 def youtubeAPI():
-    pass
+    api_service_name = "youtube"
+    api_version = "v3"
+    api_key = "AIzaSyDxoKyMEt6S3NdpT_yOIFTkSK3yWxQGbaE"
+    youtube = googleapiclient.discovery.build(
+        api_service_name, api_version, developerKey = api_key)
+    
+    playlist = {"Red (Taylor's Version)": "OLAK5uy_lhEyrFap1OvMSwsL3AoZdrvqlRdJvyx0M",
+                "Fearless (Taylor's Version)": "OLAK5uy_lUwH9j_s3ZEeayUSm5o93gtQVz0If_kd8",
+                "Evermore":"OLAK5uy_m-vSVOiVeY_z2lPgThmS6Nn0TJExXZtOg",
+                "Folklore":"OLAK5uy_nWgO-2lNMsx90439Yx0xTWCGIktUc74e8",
+                "Lover":"OLAK5uy_nHHWc9S0Nw7oLyLYBptkJ4DpkQeoL1Igw",
+                "Reputation": "OLAK5uy_kyYsExXByLh2281MMfi0QvZJF5epEUxbk",
+                "1989":"OLAK5uy_lglIKPOFCG5X9_Rf4Hxsmmh9GEeHL94Jo",
+                "Red (Delux Addition)": "OLAK5uy_mwwCV3ci_DoOhgq27DRqnrVG3QOR_S2hQ",
+                "Speak Now": "OLAK5uy_k_sq8Sp6KDtHZIxW6ovITiJhl6SIC-5gw",
+                "Fearless":"OLAK5uy_kymlVnEd_mmMQfc4GJJPTNOW-ipnOhsrY"
+                }
+    
+    album_videos = {}
+    
+    for album in playlist.keys():
+        request = youtube.playlistItems().list(
+            part="contentDetails, snippet",
+            playlistId=playlist[album],
+            maxResults = 50
+        )
+        response = request.execute()
+        
+        song_list = []
+        
+        items = response["items"]
+        for i in items:
+            sub_it = i["snippet"]
+            title = sub_it["title"]
+            song_list.append((title))
+        
+        album_videos[album] = song_list
+    
+    return album_videos
 
 def updateAPI (cur, conn, data):
     #update w wiki info
@@ -183,7 +262,7 @@ def main():
     page = requests.get(url)
     soup = BeautifulSoup(page.text, 'html.parser')
     #wiki_data = scrapeWiki(soup)
-    spotify_data, albums = spotifyApi()
+    ids, albums = playlist_data()
 
     cur, conn = setUpDatabase('db_vol_4.db')
     """
@@ -195,8 +274,7 @@ def main():
     createTables(cur, conn)
 
 
-    update_spotify_data(spotify_data, cur, conn, albums)
+    update_spotify_data(ids, cur, conn, albums)
     #updateAPI(cur, conn, wiki_data)
 
 main()
-
