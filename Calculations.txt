@@ -1,0 +1,78 @@
+Taylor Swift Data Calculations: 
+
+Average song length per album: 
+
+the joker and the queen (feat. taylor swift):3.0903666666666667 minutes
+message in a bottle (fat max g remix) (taylor’s version):3.74415 minutes
+all too well (sad girl autumn version) - recorded at long pond studios:9.969166666666666 minutes
+red (taylor's version):4.355461111111111 minutes
+the lakes (original version):3.7867166666666665 minutes
+renegade (feat. taylor swift):4.2411 minutes
+folklore:3.9756114583333333 minutes
+cardigan (cabin in candlelight version):3.8 minutes
+folklore (deluxe version):3.5302166666666666 minutes
+love story (taylor’s version):3.9294333333333333 minutes
+fearless (taylor's version):4.09775 minutes
+evermore:4.050233333333333 minutes
+willow (moonlit witch version):3.4811 minutes
+willow (lonely witch version):3.57755 minutes
+willow [dancing witch version (elvira remix)]:3.0803166666666666 minutes
+folklore: the long pond studio sessions (from the disney+ special) [deluxe edition]:3.943480701754386 minutes
+daylight (live from paris):4.372 minutes
+cornelia street (live from paris):4.93355 minutes
+lover:3.4225798245614034 minutes
+lover (first dance remix):3.8911 minutes
+you need to calm down (clean bandit remix):2.5462166666666666 minutes
+me! (live from paris):3.5504333333333333 minutes
+the archer (live from paris):3.516 minutes
+death by a thousand cuts (live from paris):3.3177666666666665 minutes
+the man (live from paris):3.656416666666667 minutes
+you need to calm down (live from paris):3.3993333333333333 minutes
+lover (live from paris):3.828883333333333 minutes
+only the young (featured in miss americana):2.6251166666666665 minutes
+lover (remix) [feat. shawn mendes]:3.6884333333333332 minutes
+beautiful ghosts (from the motion picture "cats"):4.351016666666666 minutes
+christmas tree farm:3.8004333333333333 minutes
+reputation:3.717 minutes
+1989 (deluxe edition):3.8239541666666668 minutes
+bad blood:3.3351 minutes
+fearless platinum edition:4.1812464912280705 minutes
+speak now (deluxe edition):4.592005833333333 minutes
+fifty shades darker (original motion picture soundtrack):4.094216666666667 minutes
+taylor swift:3.5661855555555557 minutes
+today was a fairytale:4.030216666666667 minutes
+the hunger games: songs from district 12 and beyond:4.038766666666667 minutes
+ronan:4.421766666666667 minutes
+spotify singles:3.469025 minutes
+sweeter than fiction:3.9606666666666666 minutes
+speak now world tour live:4.952019791666666 minutes
+delicate (seeb remix):2.88775 minutes
+...ready for it? (bloodpop® remix):3.1584666666666665 minutes
+delicate (sawyr and ryan tedder mix):3.07135 minutes
+bigger:3.5851 minutes
+live in no shoes nation:5.108433333333333 minutes
+two lanes of freedom (accelerated deluxe):4.640883333333333 minutes
+strange clouds:3.602 minutes
+love drunk:4.0473333333333334 minutes
+hannah montana the movie:3.1991 minutes
+music from the 3d concert experience:4.23 minutes
+the taylor swift holiday collection:3.186513888888889 minutes
+
+Number of Music Videos per album: 
+
+the joker and the queen (feat. taylor swift): 0message in a bottle (fat max g remix) (taylor’s version): 2all too well (sad girl autumn version) - recorded at long pond studios: 0red (taylor's version): 6the lakes (original version): 0renegade (feat. taylor swift): 0folklore: 16cardigan (cabin in candlelight version): 0folklore (deluxe version): 0love story (taylor’s version): 0fearless (taylor's version): 26evermore: 15willow (moonlit witch version): 0willow (lonely witch version): 0willow [dancing witch version (elvira remix)]: 0folklore: the long pond studio sessions (from the disney+ special) [deluxe edition]: 34daylight (live from paris): 0cornelia street (live from paris): 0lover: 18lover (first dance remix): 0you need to calm down (clean bandit remix): 0me! (live from paris): 0the archer (live from paris): 0death by a thousand cuts (live from paris): 0the man (live from paris): 0you need to calm down (live from paris): 0lover (live from paris): 0only the young (featured in miss americana): 0lover (remix) [feat. shawn mendes]: 0beautiful ghosts (from the motion picture "cats"): 0christmas tree farm: 0reputation: 151989 (deluxe edition): 13bad blood: 0fearless platinum edition: 0speak now (deluxe edition): 14fifty shades darker (original motion picture soundtrack): 0taylor swift: 15today was a fairytale: 0the hunger games: songs from district 12 and beyond: 0ronan: 0spotify singles: 0sweeter than fiction: 0speak now world tour live: 16delicate (seeb remix): 0...ready for it? (bloodpop® remix): 0delicate (sawyr and ryan tedder mix): 0bigger: 0live in no shoes nation: 0two lanes of freedom (accelerated deluxe): 0strange clouds: 0love drunk: 0hannah montana the movie: 0music from the 3d concert experience: 0the taylor swift holiday collection: 0The most popular album is the joker and the queen (feat. taylor swift)
+
+On average, Taylor wins 0.5149265348871338 awards for every nomination. 
+
+Number of music videos published on Taylor Swift's Youtube each day: 
+
+20220327: 6
+20220324: 153
+20220426: 13
+20220323: 2
+20220411: 16
+Taylor's Team was working really hard on March 24, 2022.
+
+ Phoebe's favorite song is Right Where You Left Me. 
+ Shreya's is Mr. Perfectly Fine. 
+ Isabelle's is Our Song.
