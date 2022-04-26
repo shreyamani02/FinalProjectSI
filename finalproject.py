@@ -19,12 +19,9 @@ secret = '9a43668b2bcc4b02a047683c2226defc'
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-<<<<<<< HEAD
-=======
 name = "{Taylor Swift}"
 result = sp.search(name)
 print(result['tracks']['items'][0]['artists'])
->>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
 
 #Phoebe, Shreya, Isabelle
 
@@ -220,10 +217,6 @@ def youtubeAPI(cur, conn):
             sub_it = i["snippet"]
             title = sub_it["title"].lower()
             date = sub_it["publishedAt"][:10]
-<<<<<<< HEAD
-            #print(date)
-=======
->>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
             digdate = int(date[:4]+date[5:7]+date[-2:])
             song_list.append((title, digdate))
         album_videos[album] = song_list
@@ -351,12 +344,6 @@ def how_hard_was_taylors_yt_team_working_that_day(cur, conn):
         date_dict[i[0]]=len(ls)
     return date_dict
 
-<<<<<<< HEAD
-=======
-def write_calculations(data):
-    pass
->>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
-
 def awards_chart(cur, conn):
     #print("awards chart printing? or even running? acknowledge this function please")
     cur.execute("""SELECT award_show_name, num_wins, num_noms
@@ -436,7 +423,6 @@ def energyvsdanceabilityplot(cur, conn):
     plt.title('Danceability vs Energy Scatter Plot')
     plt.show()
 
-<<<<<<< HEAD
 def write_calculations(filename, cur, conn):
     path = os.path.dirname(os.path.abspath(__file__)) + os.sep
     outFile = open(path + filename, "w")
@@ -449,18 +435,17 @@ def write_calculations(filename, cur, conn):
     wins = str(avg_winsnoms_ratio(cur, conn))
     print("On average, Taylor wins "+ wins + " awards for every nomination.")
 
-
-=======
->>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
 def video_bar_graphs(cur, conn):
     vid_dict = {}
-    for album in album_list:
-        x = videos_per_album(album.lower(), cur, conn)
+    cur.execute("SELECT album_title FROM Albums")
+    albums = cur.fetchall()
+    for album in albums:
+        album_name = album[0]
+        x = videos_per_album(album_name.lower(), cur, conn)
         if x == 0:
             continue
         else:
-            vid_dict[album[:21]] = x
-    #print(vid_dict)
+            vid_dict[album_name[:21]] = x
     labels = vid_dict.keys()
     values  = vid_dict.values()
     fig1, ax1 = plt.subplots()
@@ -475,11 +460,8 @@ def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url, verify=False)
     soup = BeautifulSoup(page.text, 'html.parser')
-<<<<<<< HEAD
     cur, conn = setUpDatabase('db_vol_7.db')
-=======
     cur, conn = setUpDatabase('db_vol_10.db')
->>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
     #cur.execute('DROP TABLE IF EXISTS Awards')
     createTables(cur, conn)
 
@@ -489,31 +471,15 @@ def main():
     yt_data= youtubeAPI(cur, conn)
     #awards_chart(cur, conn)
     #calculations and visualizations
-    """
-<<<<<<< HEAD
 
-    pie_chart_album_lengths(cur, conn)
-    """
-
-main()
-=======
-    for album in album_list:
-        #x = str(avg_length_album(album, cur, conn))
-        #print("average time of "+album+ " is "+ x + " minutes")
-    pop= most_popular_album(cur, conn)
     
-    print("The most popular album is "+ pop)
-    wins = str(avg_winsnoms_ratio(cur, conn))
-    print("On average, Taylor wins "+ wins + " awards for every nomination.")
-    pie_chart_album_lengths(cur, conn)
-    """
+    
+    
+cur, conn = setUpDatabase('db_vol_10.db')
+video_bar_graphs(cur, conn)
 
 
 
-main()
 
-#cur, conn = setUpDatabase('db_vol_8.db')
-#cur.execute("DROP TABLE IF EXISTS Songs")
-#cur.execute("DROP TABLE IF EXISTS Albums")
-#cur.execute("DROP TABLE IF EXISTS Music_Videos")
->>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
+
+
