@@ -264,7 +264,7 @@ def album_time(album, cur, conn):
     return total_length
 
 def videos_per_album(album, cur, conn):
-    cur.execute("SELECT song_title FROM Songs JOIN Albums ON albums.id = Songs.album_id WHERE album_title = (?)", (album,))
+    cur.execute("SELECT title FROM Music_Videos JOIN Albums ON albums.id = Music_Videos.album_id WHERE album_title = (?)", (album,))
     song_list = cur.fetchall()
     res = len(song_list)
     return res
@@ -314,7 +314,7 @@ def pie_chart_album_lengths(cur, conn):
     sizes = clean_fractions.values()
     fig1, ax1 = plt.subplots()
     ax1.pie(sizes, autopct='%1.1f%%',
-            shadow=True, startangle=90)
+            shadow=False, startangle=90)
     ax1.axis('equal')
     ax1.legend(labels,
           title="Album",
@@ -323,6 +323,25 @@ def pie_chart_album_lengths(cur, conn):
     plt.title("Fraction of Total Song Time on Each Album")
     plt.show()
     return(plt)
+
+def video_bar_graphs(cur, conn):
+    vid_dict = {}
+    for album in album_list:
+        x = videos_per_album(album.lower(), cur, conn)
+        if x == 0:
+            continue
+        else:
+            vid_dict[album[:21]] = x
+    print(vid_dict)
+    labels = vid_dict.keys()
+    values  = vid_dict.values()
+    fig1, ax1 = plt.subplots()
+    ax1.bar(labels, values, color = "violet")
+    plt.xticks(rotation = 45, rotation_mode = 'anchor', ha = 'right')
+    plt.title("Number of Music Videos per Album")
+    plt.xlabel("Album Name")
+    plt.ylabel("Number of Videos")
+    plt.show()
 
 def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
@@ -347,10 +366,8 @@ def main():
     pie_chart_album_lengths(cur, conn)
     """
 
-cur, conn = setUpDatabase('db_vol_7.db')
-#youtubeAPI(cur, conn)
-print(how_hard_was_taylors_yt_team_working_that_day(cur, conn))
 
+#youtubeAPI(cur, conn)
 #cur, conn = setUpDatabase('db_vol_8.db')
 #cur.execute("DROP TABLE IF EXISTS Songs")
 #cur.execute("DROP TABLE IF EXISTS Albums")
