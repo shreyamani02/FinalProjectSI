@@ -24,15 +24,11 @@ cid = '80e4d2a8c2734c8e882a74e6f2c3e9bd'
 secret = '9a43668b2bcc4b02a047683c2226defc'
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
-<<<<<<< HEAD
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-=======
 name = "{Taylor Swift}"
 result = sp.search(name)
 print(result['tracks']['items'][0]['artists'])
 
-
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
 
 #Phoebe, Shreya, Isabelle
 
@@ -58,10 +54,7 @@ def createTables(cur, conn):
          'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
         #am i missing anything? are we doing ratings
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
-<<<<<<< HEAD
-=======
     cur.execute("""CREATE TABLE IF NOT EXISTS "Genres" ('id' INTEGER PRIMARY KEY, 'genre_name' TEXT)""")
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
     cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'album_id' INTEGER, 'date' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
 
@@ -148,20 +141,17 @@ def update_spotify_data(cur, conn, ids, albums):
     track_list = []
     id = 0
     song_id = 0
-<<<<<<< HEAD
     #update album table
     count = 0
-    for i in range(len(album_list)):
+    for i in range(len(albums)):
             cur.execute("""INSERT OR IGNORE INTO Albums (id, album_title) VALUES (?, ?)""", 
-            (i, album_list[i].lower()))
-=======
+            (i, albums[i].lower()))
     album_no = 0
 
     for album in albums:
         cur.execute("""INSERT OR IGNORE INTO Albums (id, album_title) VALUES (?, ?)""", 
         (album_no, album))
         album_no += 1
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
 
     for id in ids:
         meta = sp.track(id)
@@ -378,7 +368,6 @@ def avg_rating_graph(cur, conn, data):
 def avg_length_graph(cur, conn, data):
     pass
 
-<<<<<<< HEAD
 def total_length_graph(cur, conn, data):
     pass
 
@@ -411,8 +400,6 @@ def awards_chart(cur, conn):
     plt.show()
     
 
-=======
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
 def pie_chart_album_lengths(cur, conn):
     cur.execute("SELECT length FROM Songs")
     all_lengths = cur.fetchall()
@@ -485,7 +472,6 @@ def pie_chart_genre(cur, conn, data):
 def ratings_vs_rollingstone(cur, conn, data):
     pass
 
-=======
 def video_bar_graphs(cur, conn):
     vid_dict = {}
     for album in album_list:
@@ -498,7 +484,7 @@ def video_bar_graphs(cur, conn):
     labels = vid_dict.keys()
     values  = vid_dict.values()
     fig1, ax1 = plt.subplots()
-    ax1.bar(labels, values, color = "violet")
+    ax1.bar(labels, values, color = "violet") 
     plt.xticks(rotation = 45, rotation_mode = 'anchor', ha = 'right')
     plt.title("Number of Music Videos per Album")
     plt.xlabel("Album Name")
@@ -509,7 +495,6 @@ def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url, verify=False)
     soup = BeautifulSoup(page.text, 'html.parser')
-<<<<<<< HEAD
     cur, conn = setUpDatabase('db_vol_7.db')
     #cur.execute('DROP TABLE IF EXISTS Awards')
     createTables(cur, conn)
@@ -531,8 +516,6 @@ def main():
     pie_chart_album_lengths(cur, conn)
     """
 
-main()
-=======
     cur, conn = setUpDatabase('db_vol_4.db')
     ids, albums = spotifyApi()
     createTables(cur, conn)
@@ -553,4 +536,3 @@ main()
 #cur.execute("DROP TABLE IF EXISTS Music_Videos")
 
 
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
