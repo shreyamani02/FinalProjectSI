@@ -24,15 +24,7 @@ cid = '80e4d2a8c2734c8e882a74e6f2c3e9bd'
 secret = '9a43668b2bcc4b02a047683c2226defc'
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
-<<<<<<< HEAD
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-=======
-name = "{Taylor Swift}"
-result = sp.search(name)
-print(result['tracks']['items'][0]['artists'])
-
-
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
 
 #Phoebe, Shreya, Isabelle
 
@@ -58,10 +50,6 @@ def createTables(cur, conn):
          'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
         #am i missing anything? are we doing ratings
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
-<<<<<<< HEAD
-=======
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Genres" ('id' INTEGER PRIMARY KEY, 'genre_name' TEXT)""")
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
     cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'album_id' INTEGER, 'date' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
 
@@ -148,20 +136,11 @@ def update_spotify_data(cur, conn, ids, albums):
     track_list = []
     id = 0
     song_id = 0
-<<<<<<< HEAD
     #update album table
     count = 0
     for i in range(len(album_list)):
             cur.execute("""INSERT OR IGNORE INTO Albums (id, album_title) VALUES (?, ?)""", 
             (i, album_list[i].lower()))
-=======
-    album_no = 0
-
-    for album in albums:
-        cur.execute("""INSERT OR IGNORE INTO Albums (id, album_title) VALUES (?, ?)""", 
-        (album_no, album))
-        album_no += 1
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
 
     for id in ids:
         meta = sp.track(id)
@@ -245,7 +224,7 @@ def youtubeAPI(cur, conn):
             sub_it = i["snippet"]
             title = sub_it["title"].lower()
             date = sub_it["publishedAt"][:10]
-            print(date)
+            #print(date)
             digdate = int(date[:4]+date[5:7]+date[-2:])
             song_list.append((title, digdate))
             #resp = youtube.videos().
@@ -369,21 +348,9 @@ def how_hard_was_taylors_yt_team_working_that_day(cur, conn):
         date_dict[i[0]]=len(ls)
     return date_dict
 
-def write_calculations(data):
-    pass
-
-def avg_rating_graph(cur, conn, data):
-    pass
-
-def avg_length_graph(cur, conn, data):
-    pass
-
-<<<<<<< HEAD
-def total_length_graph(cur, conn, data):
-    pass
 
 def awards_chart(cur, conn):
-    print("awards chart printing? or even running? acknowledge this function please")
+    #print("awards chart printing? or even running? acknowledge this function please")
     cur.execute("""SELECT award_show_name, num_wins, num_noms
                 FROM Awards
                 WHERE num_noms >= 32
@@ -411,8 +378,6 @@ def awards_chart(cur, conn):
     plt.show()
     
 
-=======
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
 def pie_chart_album_lengths(cur, conn):
     cur.execute("SELECT length FROM Songs")
     all_lengths = cur.fetchall()
@@ -464,28 +429,19 @@ def energyvsdanceabilityplot(cur, conn):
     plt.title('Danceability vs Energy Scatter Plot')
     plt.show()
 
-def most_music_videos(cur, conn, data):
-    pass
+def write_calculations(filename, cur, conn):
+    path = os.path.dirname(os.path.abspath(__file__)) + os.sep
+    outFile = open(path + filename, "w")
 
-def avg_rating(cur, conn, album):
-    pass
+    for album in album_list:
+        x = str(avg_length_album(album, cur, conn))
+        line = "Average time of "+album+ " is "+ x + " minutes"
+    pop= most_popular_album(cur, conn)
+    print("The most popular album is "+ pop)
+    wins = str(avg_winsnoms_ratio(cur, conn))
+    print("On average, Taylor wins "+ wins + " awards for every nomination.")
 
-def avg_rating_graph(cur, conn, data):
-    pass
 
-def avg_length_graph(cur, conn, data):
-    pass
-
-def total_length_graph(cur, conn, data):
-    pass
-
-def pie_chart_genre(cur, conn, data):
-    pass
-
-def ratings_vs_rollingstone(cur, conn, data):
-    pass
-
-=======
 def video_bar_graphs(cur, conn):
     vid_dict = {}
     for album in album_list:
@@ -494,7 +450,7 @@ def video_bar_graphs(cur, conn):
             continue
         else:
             vid_dict[album[:21]] = x
-    print(vid_dict)
+    #print(vid_dict)
     labels = vid_dict.keys()
     values  = vid_dict.values()
     fig1, ax1 = plt.subplots()
@@ -509,7 +465,6 @@ def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url, verify=False)
     soup = BeautifulSoup(page.text, 'html.parser')
-<<<<<<< HEAD
     cur, conn = setUpDatabase('db_vol_7.db')
     #cur.execute('DROP TABLE IF EXISTS Awards')
     createTables(cur, conn)
@@ -521,36 +476,8 @@ def main():
     awards_chart(cur, conn)
     #calculations and visualizations
     """
-    for album in album_list:
-        #x = str(avg_length_album(album, cur, conn))
-        #print("average time of "+album+ " is "+ x + " minutes")
-    pop= most_popular_album(cur, conn)
-    print("The most popular album is "+ pop)
-    wins = str(avg_winsnoms_ratio(cur, conn))
-    print("On average, Taylor wins "+ wins + " awards for every nomination.")
+
     pie_chart_album_lengths(cur, conn)
     """
 
 main()
-=======
-    cur, conn = setUpDatabase('db_vol_4.db')
-    ids, albums = spotifyApi()
-    createTables(cur, conn)
-    scrapeWiki(soup, cur, conn)
-    avg_winsnoms_ratio(cur, conn)
-    print(update_spotify_data(cur, conn, ids, albums))
-    youtubeAPI2 = youtubeAPI(cur, conn)
-    print(youtubeAPI2)
-    danceable_album(cur, conn)
-    energyvsdanceabilityplot(cur, conn)
-
-
-main()
-
-#cur, conn = setUpDatabase('db_vol_8.db')
-#cur.execute("DROP TABLE IF EXISTS Songs")
-#cur.execute("DROP TABLE IF EXISTS Albums")
-#cur.execute("DROP TABLE IF EXISTS Music_Videos")
-
-
->>>>>>> 60c19a9b8cad86709d775858126604e6d7c9b207
