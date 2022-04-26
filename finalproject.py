@@ -1,17 +1,11 @@
-import json
 import sys
 import os
-import matplotlib
 import sqlite3
-import csv
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
 import numpy as np
 from bs4 import BeautifulSoup
 import requests
-import unittest
 import spotipy
-import numpy as np
 from spotipy.oauth2 import SpotifyClientCredentials #To access authorised Spotify data
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
@@ -25,6 +19,12 @@ secret = '9a43668b2bcc4b02a047683c2226defc'
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+<<<<<<< HEAD
+=======
+name = "{Taylor Swift}"
+result = sp.search(name)
+print(result['tracks']['items'][0]['artists'])
+>>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
 
 #Phoebe, Shreya, Isabelle
 
@@ -48,7 +48,6 @@ def createTables(cur, conn):
     cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
          'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
-        #am i missing anything? are we doing ratings
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'album_id' INTEGER, 'date' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
@@ -132,9 +131,8 @@ def spotifyApi():
 
     return ids, albums
 
-def update_spotify_data(cur, conn, ids, albums):
+def update_spotify_data(cur, conn, ids, album_list):
     track_list = []
-    id = 0
     song_id = 0
     #update album table
     count = 0
@@ -148,9 +146,9 @@ def update_spotify_data(cur, conn, ids, albums):
 
         new_track_info = []
         #fetch track info
-        name = meta['name']
-        album = meta['album']['name']
-        artist = meta['album']['artists'][0]['name']
+        name = meta['name'].lower()
+        album = meta['album']['name'].lower()
+        artist = meta['album']['artists'][0]['name'].lower()
         cur.execute('SELECT id from Albums WHERE album_title = ?',([album]))
         album_id = int((cur.fetchone()[0]))
 
@@ -169,8 +167,6 @@ def update_spotify_data(cur, conn, ids, albums):
         )
         song_id += 1
     conn.commit()
-
-    return track_list
 
 def get_song_ids(cur, conn):
     cur.execute(
@@ -224,20 +220,27 @@ def youtubeAPI(cur, conn):
             sub_it = i["snippet"]
             title = sub_it["title"].lower()
             date = sub_it["publishedAt"][:10]
+<<<<<<< HEAD
             #print(date)
+=======
+>>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
             digdate = int(date[:4]+date[5:7]+date[-2:])
             song_list.append((title, digdate))
-            #resp = youtube.videos().
         album_videos[album] = song_list
     for album in album_videos:
-        cur.execute('SELECT id from Albums WHERE album_title = ?',([album]))
-        album_id = int((cur.fetchone()[0]))
-        for i in album_videos[album]:
-            cur.execute("INSERT OR IGNORE INTO Music_Videos (title, date, id, album_id) VALUES (?,?,?,?)", (i[0],i[1],vid_id, album_id,))
-            vid_id += 1
-            conn.commit()
-def updateAPI (cur, conn, data):
-    pass
+        cur.execute('SELECT id from Albums WHERE album_title = ?',([album.lower()]))
+        album_id = (cur.fetchone())
+        if album_id == None:
+            for i in album_videos[album]:
+                cur.execute("INSERT OR IGNORE INTO Music_Videos (title, date, id) VALUES (?,?,?)", (i[0],i[1],vid_id,))
+                vid_id += 1
+                conn.commit()
+        else:
+            for i in album_videos[album]:
+                cur.execute("INSERT OR IGNORE INTO Music_Videos (title, date, id, album_id) VALUES (?,?,?,?)", (i[0],i[1],vid_id, album_id[0],))
+                vid_id += 1
+                conn.commit()
+                
  
 def avg_winsnoms_ratio(cur, conn):
     sum_ratio = 0
@@ -348,6 +351,11 @@ def how_hard_was_taylors_yt_team_working_that_day(cur, conn):
         date_dict[i[0]]=len(ls)
     return date_dict
 
+<<<<<<< HEAD
+=======
+def write_calculations(data):
+    pass
+>>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
 
 def awards_chart(cur, conn):
     #print("awards chart printing? or even running? acknowledge this function please")
@@ -376,7 +384,6 @@ def awards_chart(cur, conn):
     plt.title("Taylor Swift's Most Nominated-for Award Shows")
 
     plt.show()
-    
 
 def pie_chart_album_lengths(cur, conn):
     cur.execute("SELECT length FROM Songs")
@@ -429,6 +436,7 @@ def energyvsdanceabilityplot(cur, conn):
     plt.title('Danceability vs Energy Scatter Plot')
     plt.show()
 
+<<<<<<< HEAD
 def write_calculations(filename, cur, conn):
     path = os.path.dirname(os.path.abspath(__file__)) + os.sep
     outFile = open(path + filename, "w")
@@ -442,6 +450,8 @@ def write_calculations(filename, cur, conn):
     print("On average, Taylor wins "+ wins + " awards for every nomination.")
 
 
+=======
+>>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
 def video_bar_graphs(cur, conn):
     vid_dict = {}
     for album in album_list:
@@ -465,19 +475,45 @@ def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url, verify=False)
     soup = BeautifulSoup(page.text, 'html.parser')
+<<<<<<< HEAD
     cur, conn = setUpDatabase('db_vol_7.db')
+=======
+    cur, conn = setUpDatabase('db_vol_10.db')
+>>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
     #cur.execute('DROP TABLE IF EXISTS Awards')
     createTables(cur, conn)
 
     #wiki_dict = scrapeWiki(soup, cur, conn)
-    #song_id_list, album_list = spotifyApi()
-    #update_spotify_data(song_id_list, cur, conn, album_list)
+    song_id_list, album_list = spotifyApi()
+    update_spotify_data(cur, conn, song_id_list, album_list)
     yt_data= youtubeAPI(cur, conn)
-    awards_chart(cur, conn)
+    #awards_chart(cur, conn)
     #calculations and visualizations
     """
+<<<<<<< HEAD
 
     pie_chart_album_lengths(cur, conn)
     """
 
 main()
+=======
+    for album in album_list:
+        #x = str(avg_length_album(album, cur, conn))
+        #print("average time of "+album+ " is "+ x + " minutes")
+    pop= most_popular_album(cur, conn)
+    
+    print("The most popular album is "+ pop)
+    wins = str(avg_winsnoms_ratio(cur, conn))
+    print("On average, Taylor wins "+ wins + " awards for every nomination.")
+    pie_chart_album_lengths(cur, conn)
+    """
+
+
+
+main()
+
+#cur, conn = setUpDatabase('db_vol_8.db')
+#cur.execute("DROP TABLE IF EXISTS Songs")
+#cur.execute("DROP TABLE IF EXISTS Albums")
+#cur.execute("DROP TABLE IF EXISTS Music_Videos")
+>>>>>>> d1866d1d4cf50951cb8c27d63b2b01715cbc3152
