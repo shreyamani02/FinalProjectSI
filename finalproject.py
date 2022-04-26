@@ -37,7 +37,7 @@ def createTables(cur, conn):
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
          'length' INTEGER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'song_id' INTEGER, 'album_id' INTEGER, 'date' INTEGER)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'album_id' INTEGER, 'date' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
 
     conn.commit()
@@ -268,7 +268,14 @@ def videos_per_album(album, cur, conn):
     song_list = cur.fetchall()
     res = len(song_list)
     return res
-    
+
+def how_hard_was_taylors_yt_team_working_that_year(cur, con):
+    date_dict = {}
+    cur.execute("SELECT date FROM Music_Videos")
+    dates = cur.findall()
+    for i in dates:
+        cur.execute("SELECT title FROM Music_Videos WHERE date")
+
 def write_calculations(data):
     pass
 
@@ -276,9 +283,6 @@ def avg_rating_graph(cur, conn, data):
     pass
 
 def avg_length_graph(cur, conn, data):
-    pass
-
-def total_length_graph(cur, conn, data):
     pass
 
 def pie_chart_album_lengths(cur, conn):
