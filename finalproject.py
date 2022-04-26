@@ -15,6 +15,8 @@ from spotipy.oauth2 import SpotifyClientCredentials #To access authorised Spotif
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
+import itertools
+import operator
 
 
 cid = '80e4d2a8c2734c8e882a74e6f2c3e9bd'
@@ -287,26 +289,26 @@ def danceable_album(cur, conn):
         """
     )
     res = cur.fetchall()
-    album_name = "The Joker And The Queen (feat. Taylor Swift)"
-    print(res)
-    avg_list = []
-    album_list = []
-    sum = 0
+    album_avg_dict = {}
+    num = 0.000
     count = 0
-    for i in res:
-        if i[1] == album_name:
-            sum += i[0]
+    name = ""   
+    for key,group in itertools.groupby(res,operator.itemgetter(1)):
+        sum = list(group)
+        for i in sum:
+            if count == 0:
+                name = str(i[1])
+            num += float(i[0])
             count += 1
-        else:
-            print(i[1])
-            album_list.append(i[1])
-            average = sum / count
-            avg_list.append(average)
-            sum = 0
-            count = 0
-
+        avg = num / count
+        album_avg_dict[name] = avg
+        num = 0.0000
+        count = 0
+    album_avg_dict = dict(sorted(album_avg_dict.items(), key=lambda item: item[1], reverse=True))
     fig = plt.figure(figsize = (10, 5))
-    plt.barh(album_list, avg_list, color ='blue')
+    albums = list(album_avg_dict.keys())
+    danceability = list(album_avg_dict.values())
+    plt.barh(albums[:10], danceability[:10], color ='blue')
     plt.xlabel("Average Taylor Swift Album Danceability")
     plt.ylabel("Album Name")
     plt.yticks(fontsize = 8)
@@ -342,6 +344,23 @@ def pie_chart_album_lengths(cur, conn):
     plt.show()
     return(plt)
 
+def energyvsdanceabilityplot(cur, conn):
+    cur.execute("""SELECT danceability, energy FROM Songs""")
+    res = cur.fetchall()
+    danceability = []
+    energy = []
+    for i in res:
+        danceability.append(i[0])
+        energy.append(i[1])
+    fig=plt.figure()    
+    plt.scatter(danceability, energy, color='r')
+    plt.xlabel('Danceability')
+    plt.ylabel('Energy')
+    plt.title('Danceability vs Energy Scatter Plot')
+    plt.show()
+
+
+
 def most_music_videos(cur, conn, data):
     pass
 
@@ -364,18 +383,19 @@ def ratings_vs_rollingstone(cur, conn, data):
     pass
 
 def main():
-    url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
-    page = requests.get(url, verify=False)
-    soup = BeautifulSoup(page.text, 'html.parser')
+    #url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
+    #page = requests.get(url, verify=False)
+    #soup = BeautifulSoup(page.text, 'html.parser')
     cur, conn = setUpDatabase('db_vol_4.db')
-    ids, albums = playlist_data()
-    createTables(cur, conn)
-    scrapeWiki(soup, cur, conn)
-    avg_winsnoms_ratio(cur, conn)
-    youtubeAPI2 = youtubeAPI(cur, conn)
-    print(youtubeAPI2)
-    print(update_spotify_data(cur, conn, ids, albums))
-    print(danceable_album(cur, conn))
+    #ids, albums = playlist_data()
+    #createTables(cur, conn)
+    #scrapeWiki(soup, cur, conn)
+    #avg_winsnoms_ratio(cur, conn)
+    #youtubeAPI2 = youtubeAPI(cur, conn)
+    #print(youtubeAPI2)
+    #print(update_spotify_data(cur, conn, ids, albums))
+    #danceable_album(cur, conn)
+    energyvsdanceabilityplot(cur, conn)
 
 
 main()
