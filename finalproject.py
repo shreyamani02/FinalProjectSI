@@ -19,38 +19,33 @@ secret = '9a43668b2bcc4b02a047683c2226defc'
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-name = "{Taylor Swift}"
-result = sp.search(name)
-print(result['tracks']['items'][0]['artists'])
 
 #Phoebe, Shreya, Isabelle
 
+"""This function creates the database specified by the input name, and returns 
+the cursor and connection to edit the database"""
 def setUpDatabase(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(path+'/'+db_name)
     cur = conn.cursor()
     return cur, conn
 
+"""This function creates the Songs, Albums, Music_Videos, and Awards tables 
+that will be filled in later. It inputs cur and conn, and it outputs nothing."""
 def createTables(cur, conn):
-    #songs (title, album #, artist/collaborator #, song length, genre #, )
-    #album ()
-    #genre ()
-    #awards?
-    #music video (title, length, views, ?)
-    cur.execute("DROP TABLE IF EXISTS Awards")
-    cur.execute("DROP TABLE IF EXISTS Albums")
-    cur.execute("DROP TABLE IF EXISTS Music_Videos")
-    cur.execute("DROP TABLE IF EXISTS Songs")
-
     cur.execute("""CREATE TABLE IF NOT EXISTS 'Songs' 
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
-         'length' INTEGER, 'genre_id' NUMBER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
+         'length' INTEGER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'album_id' INTEGER, 'date' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
-
     conn.commit()
 
+"""inputs a beautiful soup object and database cursor and connector. It scrapes
+ the table of awards on Taylor Swift’s Wikipedia page, and adds the information 
+ it gleans less than 25 items at a time, exiting the program each time. 
+ There are 126 awards, so to completely add all data to the database the program 
+ needs to be run 5 times. It returns nothing."""
 def scrapeWiki(soup, cur, conn):
     wiki_dict = {}
     new_dict = {}
@@ -96,9 +91,14 @@ def scrapeWiki(soup, cur, conn):
                     break
                 else:
                     sys.exit()
-                #exit program every 25 items
     return wiki_dict
 
+"""This function does not input anything. It uses spotipy to scrape a spotify 
+playlist of all Taylor Swift songs. The Spotify API limits requests to 100 songs,
+ so to get a complete list of data an offset method was used. The dictionary that 
+ is returned from the API is parsed to create a list of song ids (used by spotify 
+to identify the songs), and a list of each unique album in the playlist. It returns 
+the list of song ids, and the list of albums."""
 def spotifyApi():
     offset = 0
     pl_id = 'spotify:playlist:4GtQVhGjAwcHFz82UKy3Ca'
@@ -128,6 +128,11 @@ def spotifyApi():
 
     return ids, albums
 
+"""inputs the database cursor and connection, and the lists of song ids and albums.
+ It then uses the album list to fill in the album table on the database. 
+ The second part of the code uses the list of song ids to fetch the names, length, 
+ popularity, danceability, and energy of the song, as well as the album id from the 
+ album table. It returns nothing."""
 def update_spotify_data(cur, conn, ids, album_list):
     track_list = []
     song_id = 0
@@ -165,21 +170,10 @@ def update_spotify_data(cur, conn, ids, album_list):
         song_id += 1
     conn.commit()
 
-def get_song_ids(cur, conn):
-    cur.execute(
-        """
-        SELECT Songs.song_id
-        FROM Songs JOIN Music_Videos
-        WHERE Music_Videos.song_name = Songs.song_title
-        ORDER BY Music_Videos.song_name
-        """
-    )
-    song_ids = cur.fetchall()
-    append_ids = []
-    for i in song_ids:
-        append_ids.append(i[0])
-    return append_ids
-
+"""inputs the database cursor and connection, and uses a dictionary of Taylor 
+Swift Music Video Playlists and their ids to identify each music video’s name, 
+what album it belongs to, and what date it was last edited, and add this information 
+to the Music Video table."""
 def youtubeAPI(cur, conn):
     api_service_name = "youtube"
     api_version = "v3"
@@ -233,8 +227,11 @@ def youtubeAPI(cur, conn):
                 cur.execute("INSERT OR IGNORE INTO Music_Videos (title, date, id, album_id) VALUES (?,?,?,?)", (i[0],i[1],vid_id, album_id[0],))
                 vid_id += 1
                 conn.commit()
-                
- 
+
+
+"""inputs in the database cursor and connection, and accesses the database to 
+compute and return the average ratio of wins and nominations for every award 
+that she’s been nominated for."""
 def avg_winsnoms_ratio(cur, conn):
     sum_ratio = 0
     count = 0
@@ -249,10 +246,11 @@ def avg_winsnoms_ratio(cur, conn):
         noms = award[1]
         sum_ratio += float(wins/noms)
     avg_ratio = sum_ratio / count
-    print("The average ratio of wins to nominations that Taylor Swift has achieved at award shows is ", avg_ratio)
-    conn.commit()
     return avg_ratio
-  
+
+""" inputs an album and database information. It  accesses the database, collects
+ the album id and all the songs for that id, and finds the average length of a 
+ song on that album. It returns this average length."""
 def avg_length_album(album, cur, conn):
     cur.execute("SELECT length FROM Songs JOIN albums ON albums.id = Songs.album_id WHERE album_title = (?)", (album,))
     song_lengths = cur.fetchall()
@@ -263,6 +261,10 @@ def avg_length_album(album, cur, conn):
     avg_in_min = avg /60000
     return avg_in_min
 
+"""inputs in the database cursor and connection and joins both the songs and 
+albums table to calculate which album is the most popular. The function takes 
+the sum of popularity for every song off the album and computes the average 
+popularity based on the number of songs off the album."""
 def most_popular_album(cur, conn):
     cur.execute("SELECT id FROM albums")
     album_ids = cur.fetchall()
@@ -283,6 +285,10 @@ def most_popular_album(cur, conn):
     top_album = cur.fetchone()[0]
     return top_album
 
+"""This function takes in the database cursor, connection, and the name of a 
+specific album. Based on the album name, the function reads the length of every
+ song on the album and computes the sum of all the lengths. It returns the total 
+ length of the album. This function was used to make a pie chart."""
 def album_time(album, cur, conn):
     cur.execute("SELECT length FROM Songs JOIN albums ON albums.id = Songs.album_id WHERE album_title = (?)", (album,))
     length_list = cur.fetchall()
@@ -292,6 +298,9 @@ def album_time(album, cur, conn):
     total_length = sum(song_len_list)
     return total_length
 
+"""This function takes in the database information, and accesses the database 
+to determine the average danceability score of each album. It then graphs this 
+data, and returns the average danceability of all albums."""
 def danceable_album(cur, conn):
     cur.execute(
         """
@@ -320,7 +329,7 @@ def danceable_album(cur, conn):
     fig = plt.figure(figsize = (10, 5))
     albums = list(album_avg_dict.keys())
     danceability = list(album_avg_dict.values())
-    plt.barh(albums[:10], danceability[:10], color ='blue')
+    plt.barh(albums[:10], danceability[:10], color ='pink')
     plt.xlabel("Average Taylor Swift Album Danceability")
     plt.ylabel("Album Name")
     plt.yticks(fontsize = 8)
@@ -328,12 +337,18 @@ def danceable_album(cur, conn):
     plt.show()
     return res 
 
+"""This function inputs the database information and an album name. The album 
+name is used to access the album id and that is used to determine how many music
+ videos correspond to that album. It returns an integer of music videos for that album."""
 def videos_per_album(album, cur, conn):
     cur.execute("SELECT title FROM Music_Videos JOIN Albums ON albums.id = Music_Videos.album_id WHERE album_title = (?)", (album,))
     song_list = cur.fetchall()
     res = len(song_list)
     return res
 
+"""This function inputs the database information and creates a dictionary of all
+ days that the Taylor Swift Youtube Channel published a music video and the number
+ of music videos published that day. """
 def how_hard_was_taylors_yt_team_working_that_day(cur, conn):
     date_dict = {}
     cur.execute("SELECT date FROM Music_Videos")
@@ -344,8 +359,10 @@ def how_hard_was_taylors_yt_team_working_that_day(cur, conn):
         date_dict[i[0]]=len(ls)
     return date_dict
 
+"""This function prints out a bar graph that displays (top 10) the number of 
+wins and nominations that Taylor has received at various award shows. The bars
+ for nominations and wins are displayed in different colors."""
 def awards_chart(cur, conn):
-    #print("awards chart printing? or even running? acknowledge this function please")
     cur.execute("""SELECT award_show_name, num_wins, num_noms
                 FROM Awards
                 WHERE num_noms >= 32
@@ -358,12 +375,11 @@ def awards_chart(cur, conn):
         name.append(awards[i][0])
         wins.append(awards[i][1])
         noms.append(awards[i][2])
-    #confused
     x_axis = np.arange(len(name))
     legend = ["Wins", "Nominations"]
 
-    plt.bar(x_axis +0.2, wins, width=0.4, label="Wins")
-    plt.bar(x_axis -0.2, noms, width=0.4, label="Nominations")
+    plt.bar(x_axis +0.2, wins, width=0.4, label="Wins", color = "slateblue")
+    plt.bar(x_axis -0.2, noms, width=0.4, label="Nominations", color = "lavender")
     plt.ylabel("Number of Nominations or Wins")
     plt.xticks(x_axis, name, rotation=45, fontsize=8, ha='right', rotation_mode='anchor')
     plt.subplots_adjust(bottom=0.305)
@@ -372,6 +388,9 @@ def awards_chart(cur, conn):
 
     plt.show()
 
+"""This function creates a pie chart that displays the total length of each album
+ as a fraction of the total time of Taylor’s discography. It inputs cur and conn, 
+ and returns nothing. """
 def pie_chart_album_lengths(cur, conn):
     cur.execute("SELECT length FROM Songs")
     all_lengths = cur.fetchall()
@@ -408,6 +427,9 @@ def pie_chart_album_lengths(cur, conn):
     plt.show()
     return(plt)
 
+"""This function takes in a database cursor and connection and reads in the 
+energy and danceability for every song in the database. It then plots the data 
+on a scatterplot."""
 def energyvsdanceabilityplot(cur, conn):
     cur.execute("""SELECT danceability, energy FROM Songs""")
     res = cur.fetchall()
@@ -416,25 +438,58 @@ def energyvsdanceabilityplot(cur, conn):
     for i in res:
         danceability.append(i[0])
         energy.append(i[1])
-    fig=plt.figure()    
-    plt.scatter(danceability, energy, color='r')
+    fig=plt.figure()
+    plt.scatter(danceability, energy, color='rebeccapurple')
     plt.xlabel('Danceability')
     plt.ylabel('Energy')
     plt.title('Danceability vs Energy Scatter Plot')
     plt.show()
 
+"""This function takes in database information and the name of .txt file. 
+It opens this file and runs the avg_length_album, most_pop_album, avg_winsnoms_ratio,
+and videos_per_album function. It writes the results of these functions to the 
+.txt file and closes the file. It returns nothing."""
 def write_calculations(filename, cur, conn):
     path = os.path.dirname(os.path.abspath(__file__)) + os.sep
     outFile = open(path + filename, "w")
-
-    for album in album_list:
-        x = str(avg_length_album(album, cur, conn))
-        line = "Average time of "+album+ " is "+ x + " minutes"
+    line = "Taylor Swift Data Calculations: \n"
+    outFile.write(line + "\n")
+    line = "Average song length per album: \n"
+    outFile.write(line + "\n")
+    cur.execute("SELECT album_title FROM Albums \n")
+    albums = cur.fetchall()
+    for album in albums:
+        x = str(avg_length_album(album[0], cur, conn))
+        line = album[0]+ ":"+ x + " minutes"
+        outFile.write(line + "\n")
+    line = "Number of Music Videos per album: \n"
+    outFile.write("\n"+ line + "\n")
+    for album in albums:
+        y = str(videos_per_album(album[0], cur, conn))
+        line = album[0] + ": " + y
+        outFile.write(line)
     pop= most_popular_album(cur, conn)
-    print("The most popular album is "+ pop)
+    line = "The most popular album is "+ pop +"\n"
+    outFile.write(line + "\n")
     wins = str(avg_winsnoms_ratio(cur, conn))
-    print("On average, Taylor wins "+ wins + " awards for every nomination.")
+    line = "On average, Taylor wins "+ wins + " awards for every nomination. \n"
+    outFile.write(line + "\n")
+    line = "Number of music videos published on Taylor Swift's Youtube each day: \n"
+    outFile.write(line + "\n")
+    dict = how_hard_was_taylors_yt_team_working_that_day(cur, conn)
+    for i in dict.keys():
+        date = str(i)
+        num_vid = str(dict[i])
+        line = date + ": " + num_vid
+        outFile.write(line+"\n")
+    line = "Taylor's Team was working really hard on March 24, 2022."
+    outFile.write(line+"\n")
+    line = "\n Phoebe's favorite song is Right Where You Left Me. \n Shreya's is Mr. Perfectly Fine. \n Isabelle's is Our Song."
+    outFile.write(line)
+    outFile.close()
 
+"""his function inputs the database information and creates a matplotlib bar 
+graph of the number of music videos for each album. It returns nothing. """
 def video_bar_graphs(cur, conn):
     vid_dict = {}
     cur.execute("SELECT album_title FROM Albums")
@@ -460,23 +515,36 @@ def main():
     url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
     page = requests.get(url, verify=False)
     soup = BeautifulSoup(page.text, 'html.parser')
-    cur, conn = setUpDatabase('db_vol_7.db')
-    cur, conn = setUpDatabase('db_vol_10.db')
-    #cur.execute('DROP TABLE IF EXISTS Awards')
+    cur, conn = setUpDatabase('db_vol_13.db')
     createTables(cur, conn)
+    wiki_dict = scrapeWiki(soup, cur, conn)
+    song_ids, album_list = spotifyApi()
+    update_spotify_data(cur, conn, song_ids, album_list)
+    youtubeAPI(cur, conn)
+    write_calculations("Calculations.txt", cur, conn)
+    awards_chart(cur, conn)
+    pie_chart_album_lengths(cur, conn)
+    energyvsdanceabilityplot(cur, conn)
+    video_bar_graphs(cur, conn)
+    danceable_album(cur, conn)
 
-    #wiki_dict = scrapeWiki(soup, cur, conn)
-    song_id_list, album_list = spotifyApi()
-    update_spotify_data(cur, conn, song_id_list, album_list)
-    yt_data= youtubeAPI(cur, conn)
-    #awards_chart(cur, conn)
-    #calculations and visualizations
+main()
 
-    
-    
-    
-cur, conn = setUpDatabase('db_vol_10.db')
-video_bar_graphs(cur, conn)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
