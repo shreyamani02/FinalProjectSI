@@ -55,7 +55,7 @@ def createTables(cur, conn):
         #am i missing anything? are we doing ratings
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Genres" ('id' INTEGER PRIMARY KEY, 'genre_name' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' INTEGER PRIMARY KEY, 'song_title' NUMBER, 'song_name' TEXT, 'album_name' TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'song_id' INTEGER, 'album_id' INTEGER, 'date' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
 
     conn.commit()
@@ -97,7 +97,7 @@ def scrapeWiki(soup, cur, conn):
     conn.commit()
     return wiki_dict
 
-def playlist_data():
+def spotifyApi():
     offset = 0
     pl_id = 'spotify:playlist:4GtQVhGjAwcHFz82UKy3Ca'
     big_list = []
@@ -106,17 +106,12 @@ def playlist_data():
                                  offset=offset,
                                  fields='items,total',
                                  additional_types=['track'])
-       
         if len(response['items']) == 0:
             break
-       
- 
+
         big_list.append(response['items'])
         offset = offset + len(response['items'])
- 
-        #print(offset, "/", response['total'])
-   
-   
+
     ids = []
     test_dict = []
     albums = []
@@ -128,14 +123,8 @@ def playlist_data():
             album = dict['track']['album']['name']
             if album not in albums:
                 albums.append(dict['track']['album']['name'])
- 
-            #for key in dict['track']:
-            #    print(key)
-   
- 
-    return ids, albums
-    #known- there are 3 pages of data to pull
 
+    return ids, albums
 
 def update_spotify_data(cur, conn, ids, albums):
     track_list = []
@@ -200,55 +189,49 @@ def youtubeAPI(cur, conn):
     youtube = googleapiclient.discovery.build(
         api_service_name, api_version, developerKey = api_key)
     
-    playlist = {"Red (Taylor's Version)": "OLAK5uy_lhEyrFap1OvMSwsL3AoZdrvqlRdJvyx0M",
-                "Fearless (Taylor's Version)": "OLAK5uy_lUwH9j_s3ZEeayUSm5o93gtQVz0If_kd8",
-                "Evermore":"OLAK5uy_m-vSVOiVeY_z2lPgThmS6Nn0TJExXZtOg",
-                "Folklore":"OLAK5uy_nWgO-2lNMsx90439Yx0xTWCGIktUc74e8",
-                "Lover":"OLAK5uy_nHHWc9S0Nw7oLyLYBptkJ4DpkQeoL1Igw",
-                "Reputation": "OLAK5uy_kyYsExXByLh2281MMfi0QvZJF5epEUxbk",
-                "1989":"OLAK5uy_lglIKPOFCG5X9_Rf4Hxsmmh9GEeHL94Jo",
-                "Red (Delux Addition)": "OLAK5uy_mwwCV3ci_DoOhgq27DRqnrVG3QOR_S2hQ",
-                "Speak Now": "OLAK5uy_k_sq8Sp6KDtHZIxW6ovITiJhl6SIC-5gw",
-                "Fearless":"OLAK5uy_kymlVnEd_mmMQfc4GJJPTNOW-ipnOhsrY"
+    playlist = {"red (taylor's version)": "OLAK5uy_lhEyrFap1OvMSwsL3AoZdrvqlRdJvyx0M",
+                "fearless (taylor's version)": "OLAK5uy_lUwH9j_s3ZEeayUSm5o93gtQVz0If_kd8",
+                "evermore":"OLAK5uy_m-vSVOiVeY_z2lPgThmS6Nn0TJExXZtOg",
+                "folklore":"OLAK5uy_nWgO-2lNMsx90439Yx0xTWCGIktUc74e8",
+                "lover":"OLAK5uy_nHHWc9S0Nw7oLyLYBptkJ4DpkQeoL1Igw",
+                "reputation": "OLAK5uy_kyYsExXByLh2281MMfi0QvZJF5epEUxbk",
+                "1989 (deluxe edition)":"OLAK5uy_lglIKPOFCG5X9_Rf4Hxsmmh9GEeHL94Jo",
+                "speak now (deluxe edition)": "OLAK5uy_k_sq8Sp6KDtHZIxW6ovITiJhl6SIC-5gw",
+                "message in a bottle (fat max g remix) (taylor’s version)":"OLAK5uy_n--XSLkZ2oX24BzALwE5oCHaBlPvx_L-I",
+                "folklore: the long pond studio sessions (from the disney+ special) [deluxe edition]":"OLAK5uy_kBCcQO_p5kZzSJDsJ7wA5WSSQ_FUL4Xu0",
+                "taylor swift": "OLAK5uy_l320Kcg2IKwpIRR07SD-ZejNX0cxRF32c",
+                "speak now world tour live":"OLAK5uy_kWNYh2JP5uga3mbNeIxmgQOoW6cxPDzgw",
                 }
     
     album_videos = {}
-    
+    vid_id = 0
     for album in playlist.keys():
         request = youtube.playlistItems().list(
-            part="contentDetails, snippet",
+            part="contentDetails, snippet, id, status",
             playlistId=playlist[album],
             maxResults = 50
         )
         response = request.execute()
-        
         song_list = []
-        
         items = response["items"]
         for i in items:
+            yt_id = i["id"]
             sub_it = i["snippet"]
-            title = sub_it["title"]
-            song_list.append((title))
-        
+            title = sub_it["title"].lower()
+            date = sub_it["publishedAt"][:10]
+            print(date)
+            digdate = int(date[:4]+date[5:7]+date[-2:])
+            song_list.append((title, digdate))
+            #resp = youtube.videos().
         album_videos[album] = song_list
-    song_id = 0
-    album_id = 0
-    track_iterator = 0
-    for video in album_videos:
-        for song in album_videos[video]:
-            cur.execute(
-                """INSERT OR IGNORE INTO Music_Videos (id, song_title, song_name, album_name)
-                VALUES (?, ?, ?, ?)""",
-                (song_id, 0, song.lower(), album_id)
-            )
-            track_iterator += 1
-            song_id += 1 
-        album_id+= 1
-    conn.commit()
-    ids = get_song_ids(cur, conn)
-    print(ids)
-    return album_videos
-
+    for album in album_videos:
+        cur.execute('SELECT id from Albums WHERE album_title = ?',([album]))
+        print(album)
+        album_id = int((cur.fetchone()[0]))
+        for i in album_videos[album]:
+            cur.execute("INSERT OR IGNORE INTO Music_Videos (title, date, id, album_id) VALUES (?,?,?,?)", (i[0],i[1],vid_id, album_id,))
+            vid_id += 1
+            conn.commit()
 def updateAPI (cur, conn, data):
     pass
  
@@ -361,6 +344,7 @@ def energyvsdanceabilityplot(cur, conn):
 
 
 
+
 def most_music_videos(cur, conn, data):
     pass
 
@@ -383,18 +367,18 @@ def ratings_vs_rollingstone(cur, conn, data):
     pass
 
 def main():
-    #url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
-    #page = requests.get(url, verify=False)
-    #soup = BeautifulSoup(page.text, 'html.parser')
+    url = "https://en.wikipedia.org/wiki/List_of_awards_and_nominations_received_by_Taylor_Swift"
+    page = requests.get(url, verify=False)
+    soup = BeautifulSoup(page.text, 'html.parser')
     cur, conn = setUpDatabase('db_vol_4.db')
-    #ids, albums = playlist_data()
-    #createTables(cur, conn)
-    #scrapeWiki(soup, cur, conn)
-    #avg_winsnoms_ratio(cur, conn)
-    #youtubeAPI2 = youtubeAPI(cur, conn)
-    #print(youtubeAPI2)
-    #print(update_spotify_data(cur, conn, ids, albums))
-    #danceable_album(cur, conn)
+    ids, albums = spotifyApi()
+    createTables(cur, conn)
+    scrapeWiki(soup, cur, conn)
+    avg_winsnoms_ratio(cur, conn)
+    print(update_spotify_data(cur, conn, ids, albums))
+    youtubeAPI2 = youtubeAPI(cur, conn)
+    print(youtubeAPI2)
+    danceable_album(cur, conn)
     energyvsdanceabilityplot(cur, conn)
 
 
