@@ -269,12 +269,15 @@ def videos_per_album(album, cur, conn):
     res = len(song_list)
     return res
 
-def how_hard_was_taylors_yt_team_working_that_year(cur, con):
+def how_hard_was_taylors_yt_team_working_that_day(cur, conn):
     date_dict = {}
     cur.execute("SELECT date FROM Music_Videos")
-    dates = cur.findall()
+    dates = cur.fetchall()
     for i in dates:
-        cur.execute("SELECT title FROM Music_Videos WHERE date")
+        cur.execute("SELECT title FROM Music_Videos WHERE date = ?", (i[0],))
+        ls = cur.fetchall()
+        date_dict[i[0]]=len(ls)
+    return date_dict
 
 def write_calculations(data):
     pass
@@ -346,7 +349,7 @@ def main():
 
 cur, conn = setUpDatabase('db_vol_7.db')
 #youtubeAPI(cur, conn)
-print(most_popular_album(cur, conn))
+print(how_hard_was_taylors_yt_team_working_that_day(cur, conn))
 
 #cur, conn = setUpDatabase('db_vol_8.db')
 #cur.execute("DROP TABLE IF EXISTS Songs")
