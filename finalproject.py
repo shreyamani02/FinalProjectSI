@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 import requests
 import unittest
 import spotipy
+import numpy as np
 from spotipy.oauth2 import SpotifyClientCredentials #To access authorised Spotify data
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
@@ -33,7 +34,7 @@ def createTables(cur, conn):
         ('song_id' INTEGER PRIMARY KEY, 'song_title' TEXT, 'album_id' NUMBER, 
          'length' INTEGER, 'popularity' INTEGER, 'danceability' REAL, 'energy' REAL)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Albums" ('id' INTEGER PRIMARY KEY, 'album_title' TEXT)""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'song_id' INTEGER, 'album_id' INTEGER, 'date' INTEGER)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS "Music_Videos" ('id' AUTO_INCREMENT INTEGER PRIMARY KEY, 'title' TEXT, 'album_id' INTEGER, 'date' INTEGER)""")
     cur.execute("""CREATE TABLE IF NOT EXISTS "Awards" ('id' INTEGER PRIMARY KEY, 'award_show_name' NUMBER, 'num_wins' INTEGER, 'num_noms' INTEGER)""")
 
     conn.commit()
@@ -65,13 +66,11 @@ def scrapeWiki(soup, cur, conn):
                 new_dict = {}
                 iterator = 1
     del wiki_dict['Totals']
-    print("counting the ids, limiting to 25?")
+
     for winsnoms in wiki_dict:
         cur.execute("""SELECT MAX(id) FROM Awards""")
         count = cur.fetchone()[0]
-        print(count)
         
-
         cur.execute(
             """INSERT OR IGNORE INTO Awards (id, award_show_name, num_wins, num_noms)
             VALUES (?, ?, ?, ?)""",
@@ -81,7 +80,10 @@ def scrapeWiki(soup, cur, conn):
         conn.commit()
         if type(count) == int:
             if count % 25 == 0:
-                sys.exit()
+                if count == 125:
+                    break
+                else:
+                    sys.exit()
                 #exit program every 25 items
     return wiki_dict
 
@@ -274,6 +276,35 @@ def avg_length_graph(cur, conn, data):
 def total_length_graph(cur, conn, data):
     pass
 
+def awards_chart(cur, conn):
+    print("awards chart printing? or even running? acknowledge this function please")
+    cur.execute("""SELECT award_show_name, num_wins, num_noms
+                FROM Awards
+                WHERE num_noms >= 32
+                """)
+    awards = cur.fetchall()
+    name = []
+    wins = []
+    noms = []
+    for i in range(len(awards)):
+        name.append(awards[i][0])
+        wins.append(awards[i][1])
+        noms.append(awards[i][2])
+    #confused
+    x_axis = np.arange(len(name))
+    legend = ["Wins", "Nominations"]
+
+    plt.bar(x_axis +0.2, wins, width=0.4, label="Wins")
+    plt.bar(x_axis -0.2, noms, width=0.4, label="Nominations")
+    plt.ylabel("Number of Nominations or Wins")
+    plt.xticks(x_axis, name, rotation=45, fontsize=8, ha='right', rotation_mode='anchor')
+    plt.subplots_adjust(bottom=0.305)
+    plt.legend(legend, loc= "best")
+    plt.title("Taylor Swift's Most Nominated-for Award Shows")
+
+    plt.show()
+    
+
 def pie_chart_album_lengths(cur, conn):
     cur.execute("SELECT length FROM Songs")
     all_lengths = cur.fetchall()
@@ -309,11 +340,11 @@ def main():
     #cur.execute('DROP TABLE IF EXISTS Awards')
     createTables(cur, conn)
 
-    wiki_dict = scrapeWiki(soup, cur, conn)
-    song_id_list, album_list = spotifyApi()
-    update_spotify_data(song_id_list, cur, conn, album_list)
+    #wiki_dict = scrapeWiki(soup, cur, conn)
+    #song_id_list, album_list = spotifyApi()
+    #update_spotify_data(song_id_list, cur, conn, album_list)
     yt_data= youtubeAPI(cur, conn)
-    
+    awards_chart(cur, conn)
     #calculations and visualizations
     """
     for album in album_list:
